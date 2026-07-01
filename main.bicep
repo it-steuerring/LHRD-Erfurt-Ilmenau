@@ -39,7 +39,7 @@ param virtualMachineSizeDC string = 'Standard_D2s_v6'
 param domainFQDN string = 'OUCICW.local' //change domain here. Use simple domain like "contoso.local" instead of "ad.contoso.local". Always use .local as the top-level domain
 
 @description('URL to the FSLogix GPO.')
-param fslogixProfileSizeZipUrl string = 'https://raw.githubusercontent.com/alangerotaouh/avd/main/FSLogixAvd.zip'
+param fslogixProfileSizeZipUrl string = 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/FSLogixAvd.zip'
 // currently not used
 //param domainSuffix string = 'contoso.com'
 
@@ -56,7 +56,7 @@ param avdSessionHostVersion string = 'latest'
 param avdSessionHostStorageAccountType string = 'StandardSSD_LRS'
 param avdworkspaceName string = 'avd-workspace-prod-01'
 param avdappGroupName string = 'avd-appgroup-prod-01'
-param avdmaxSessionLimit int = 4 // Maximum number of concurrent sessions per AVD session host. Change this value to fit your needs.
+param avdmaxSessionLimit int = 6 // Maximum number of concurrent sessions per AVD session host. Change this value to fit your needs.
 param loadBalancerType string = 'DepthFirst' // Load balancing algorithm for the host pool. Change this value to 'DepthFirst' if you want to fill up one session host before using the next one.
 var domainName = first(split(domainFQDN, '.'))
 var ouPathResolved = 'OU=Server,OU=EntraSync,DC=${domainName},DC=local'
@@ -168,7 +168,7 @@ resource domainControllerConfiguration 'Microsoft.Compute/virtualMachines/extens
     autoUpgradeMinorVersion: true
     settings: {
       useExisting: false
-      ModulesUrl: 'https://raw.githubusercontent.com/alangerotaouh/avd/refs/heads/main/Deploy-DomainServices.zip'
+      ModulesUrl: 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/Deploy-DomainServices.zip'
       ConfigurationFunction: 'Deploy-DomainServices.ps1\\Deploy-DomainServices'
       Properties: {
         domainFQDN: domainFQDN
