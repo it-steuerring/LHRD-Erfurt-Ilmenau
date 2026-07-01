@@ -102,7 +102,7 @@ resource dscJoin 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' = {
     autoUpgradeMinorVersion: true
 
     settings: {
-      ModulesUrl: 'https://github.com/alangerotaouh/avd/raw/main/Join-Domain-AVD.zip'
+      ModulesUrl: 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/Join-Domain.zip'
       ConfigurationFunction: 'Join-Domain.ps1\\Join-Domain'
       Properties: {
         computerName: vmName
@@ -134,7 +134,7 @@ resource registerHost 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' 
     autoUpgradeMinorVersion: true
     settings: {
       fileUris: [
-        'https://raw.githubusercontent.com/alangerotaouh/avd/refs/heads/main/Register-Host.zip'
+        'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/Register-Host.zip'
       ]
       commandToExecute: 'powershell -ExecutionPolicy Unrestricted -Command "Expand-Archive -Path Register-Host.zip -DestinationPath .\\RegisterHost; .\\RegisterHost\\Register-Host.ps1 -hostPoolName \'${hostPoolName}\' -registrationToken \'${registrationInfoToken}\' -storageAccountName \'${storageAccountName}\' -aadJoin \'false\'"'
     }
