@@ -312,7 +312,7 @@ resource customScriptExtension 'Microsoft.Compute/virtualMachines/extensions@202
       settings:{ 
         fileUris:[]
       commandToExecute: '''
-powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/alangerotaouh/avd/refs/heads/main/Deploy-LanguageAndDisk.zip' -OutFile 'C:\Temp\Deploy-LanguageAndDisk.zip'; Expand-Archive -Path 'C:\Temp\Deploy-LanguageAndDisk.zip' -DestinationPath 'C:\Temp\Deploy-LanguageAndDisk' -Force; & 'C:\Temp\Deploy-LanguageAndDisk\Deploy-LanguageAndDisk.ps1'"
+powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/Deploy-LanguageAndDisk.zip' -OutFile 'C:\Temp\Deploy-LanguageAndDisk.zip'; Expand-Archive -Path 'C:\Temp\Deploy-LanguageAndDisk.zip' -DestinationPath 'C:\Temp\Deploy-LanguageAndDisk' -Force; & 'C:\Temp\Deploy-LanguageAndDisk\Deploy-LanguageAndDisk.ps1'"
 '''
       }
     }
