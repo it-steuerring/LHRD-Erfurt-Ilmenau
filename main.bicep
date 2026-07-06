@@ -303,17 +303,19 @@ module backupvlt './modules/backupvlt.bicep' = {
 resource customScriptExtension 'Microsoft.Compute/virtualMachines/extensions@2024-07-01' = { 
   name: '${domainControllerName}/Microsoft.Powershell.CustomScriptExtension'
   location: location
-  dependsOn:[virtualNetworkDNS]
+  dependsOn:[
+    domainControllerConfiguration
+  ]
   properties:{ 
     publisher:'Microsoft.Compute'
     type:'CustomScriptExtension'
     typeHandlerVersion:'1.10'
     autoUpgradeMinorVersion: true
-      settings:{ 
-        fileUris:[]
+    settings:{ 
+      fileUris:[]
       commandToExecute: '''
-powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/Deploy-LanguageAndDisk.zip' -OutFile 'C:\Temp\Deploy-LanguageAndDisk.zip'; Expand-Archive -Path 'C:\Temp\Deploy-LanguageAndDisk.zip' -DestinationPath 'C:\Temp\Deploy-LanguageAndDisk' -Force; & 'C:\Temp\Deploy-LanguageAndDisk\Deploy-LanguageAndDisk.ps1'"
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path 'C:\Temp' -Force; Invoke-WebRequest -Uri 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/Deploy-LanguageAndDisk.zip' -OutFile 'C:\Temp\Deploy-LanguageAndDisk.zip'; Expand-Archive -Path 'C:\Temp\Deploy-LanguageAndDisk.zip' -DestinationPath 'C:\Temp\Deploy-LanguageAndDisk' -Force; & 'C:\Temp\Deploy-LanguageAndDisk\Deploy-LanguageAndDisk.ps1'"
 '''
-      }
     }
   }
+}
