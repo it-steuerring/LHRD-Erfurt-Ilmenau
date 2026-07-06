@@ -50,7 +50,7 @@ param avdappGroupName string
 
 resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2023-09-05' = {
   name: hostPoolName
-  location: 'germanywestcentral'
+  location: 'West Europe'
   properties: {
     hostPoolType: hostPoolType
     loadBalancerType: loadBalancerType
@@ -71,7 +71,7 @@ resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2023-09-05' = {
 
 resource appGroup 'Microsoft.DesktopVirtualization/applicationGroups@2023-09-05' = {
   name: avdappGroupName
-  location: 'germanywestcentral'
+  location: 'West Europe'
   properties: {
     hostPoolArmPath: hostPool.id
     applicationGroupType: 'Desktop'
@@ -81,7 +81,7 @@ resource appGroup 'Microsoft.DesktopVirtualization/applicationGroups@2023-09-05'
 // Workspace create
 resource workspace 'Microsoft.DesktopVirtualization/workspaces@2025-03-01-preview' = {
   name: avdworkspaceName
-  location: 'germanywestcentral'
+  location: 'West Europe'
   properties: {
     friendlyName: workspaceFriendlyName
     description: 'Arbeitsbereich für Azure Virtual Desktop'
@@ -94,7 +94,7 @@ resource workspace 'Microsoft.DesktopVirtualization/workspaces@2025-03-01-previe
 
 resource scalingPlan 'Microsoft.DesktopVirtualization/scalingPlans@2025-10-10' = {
   name: scalingPlanName
-  location: 'germanywestcentral'
+  location: 'West Europe'
   properties: {
     timeZone: 'W. Europe Standard Time'
     hostPoolType: hostPoolType
