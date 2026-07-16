@@ -102,7 +102,7 @@ resource dscJoin 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' = {
     autoUpgradeMinorVersion: true
 
     settings: {
-      ModulesUrl: 'https://github.com/alangerotaouh/avd/raw/main/Join-Domain-AVD.zip'
+      ModulesUrl: 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/Join-Domain-AVD.zip'
       ConfigurationFunction: 'Join-Domain.ps1\\Join-Domain'
       Properties: {
         computerName: vmName
