@@ -169,7 +169,7 @@ resource domainControllerConfiguration 'Microsoft.Compute/virtualMachines/extens
     autoUpgradeMinorVersion: true
     settings: {
       useExisting: false
-      ModulesUrl: 'https://raw.githubusercontent.com/alangerotaouh/avd/refs/heads/main/Deploy-DomainServices.zip'
+      ModulesUrl: 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/Deploy-DomainServices.zip'
       ConfigurationFunction: 'Deploy-DomainServices.ps1\\Deploy-DomainServices'
       Properties: {
         domainFQDN: domainFQDN
