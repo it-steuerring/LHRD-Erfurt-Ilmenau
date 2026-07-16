@@ -40,7 +40,7 @@ param virtualMachineSizeDC string = 'Standard_B2s'
 param domainFQDN string = 'exaktimmobilienverwaltung.local' //change domain here. Use simple domain like "contoso.local" instead of "ad.contoso.local". Always use .local as the top-level domain
 
 @description('URL to the FSLogix GPO.')
-param fslogixProfileSizeZipUrl string = 'https://raw.githubusercontent.com/alangerotaouh/avd/main/FSLogixAvd.zip'
+param fslogixProfileSizeZipUrl string = 'https://github.com/it-steuerring/LHRD-Erfurt-Ilmenau/raw/refs/heads/main/scripts/FSLogixAvd.zip'
 // currently not used
 //param domainSuffix string = 'contoso.com'
 
