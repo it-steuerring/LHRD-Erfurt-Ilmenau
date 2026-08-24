@@ -1,0 +1,243 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "hostPoolResourceId": {
+      "type": "String",
+      "metadata": {
+        "description": "ARM resource ID of the AVD host pool, e.g. /subscriptions/.../providers/Microsoft.DesktopVirtualization/hostPools/avd-hostpool-prod-01"
+      }
+    },
+    "avdApiVersion": {
+      "type": "String",
+      "defaultValue": "2025-10-10"
+    },
+    "computeApiVersion": {
+      "type": "String",
+      "defaultValue": "2024-07-01"
+    },
+    "maxRemainingActiveSessions": {
+      "type": "Int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Deallocate only if the number of ACTIVE user sessions in the host pool is less than or equal to this value."
+      }
+    },
+    "logoffRemainingSessions": {
+      "type": "Bool",
+      "defaultValue": true
+    },
+    "logoffWaitSeconds": {
+      "type": "Int",
+      "defaultValue": 60
+    }
+  },
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": {
+        "method": "GET"
+      }
+    }
+  },
+  "actions": {
+    "Get_Session_Hosts": {
+      "type": "Http",
+      "runAfter": {},
+      "inputs": {
+        "method": "GET",
+        "uri": "@{concat('https://management.azure.com', parameters('hostPoolResourceId'), '/sessionHosts?api-version=', parameters('avdApiVersion'))}",
+        "authentication": {
+          "type": "ManagedServiceIdentity",
+          "audience": "https://management.azure.com/"
+        }
+      }
+    },
+    "Get_User_Sessions": {
+      "type": "Http",
+      "runAfter": {},
+      "inputs": {
+        "method": "GET",
+        "uri": "@{concat('https://management.azure.com', parameters('hostPoolResourceId'), '/userSessions?api-version=', parameters('avdApiVersion'))}",
+        "authentication": {
+          "type": "ManagedServiceIdentity",
+          "audience": "https://management.azure.com/"
+        }
+      }
+    },
+    "Filter_Active_Sessions": {
+      "type": "Query",
+      "runAfter": {
+        "Get_User_Sessions": [
+          "Succeeded"
+        ]
+      },
+      "inputs": {
+        "from": "@coalesce(body('Get_User_Sessions')?['value'], json('[]'))",
+        "where": "@equals(toLower(coalesce(item()?['properties']?['sessionState'], '')), 'active')"
+      }
+    },
+    "Select_Active_Users": {
+      "type": "Select",
+      "runAfter": {
+        "Filter_Active_Sessions": [
+          "Succeeded"
+        ]
+      },
+      "inputs": {
+        "from": "@body('Filter_Active_Sessions')",
+        "select": "@coalesce(item()?['properties']?['userPrincipalName'], item()?['properties']?['activeDirectoryUserName'], item()?['name'], 'unbekannt')"
+      }
+    },
+    "Check_Active_Session_Count": {
+      "type": "If",
+      "runAfter": {
+        "Get_Session_Hosts": [
+          "Succeeded"
+        ],
+        "Select_Active_Users": [
+          "Succeeded"
+        ]
+      },
+      "expression": {
+        "and": [
+          {
+            "lessOrEquals": [
+              "@length(body('Filter_Active_Sessions'))",
+              "@parameters('maxRemainingActiveSessions')"
+            ]
+          }
+        ]
+      },
+      "actions": {
+        "Respond_Shutdown_Started": {
+          "type": "Response",
+          "kind": "Http",
+          "runAfter": {},
+          "inputs": {
+            "statusCode": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Session Hosts werden heruntergefahren</title></head><body style='font-family:Segoe UI,Arial,sans-serif;background:#f3f2f1;margin:0;padding:48px'><div style='max-width:640px;margin:0 auto;background:#fff;border-radius:8px;padding:32px'><h1 style='color:#0f6cbd;font-size:22px;margin:0 0 16px'>Session Hosts werden heruntergefahren</h1><p style='font-size:15px;color:#242424;line-height:1.5'>Es sind nur noch <strong>@{length(body('Filter_Active_Sessions'))}</strong> aktive Sitzung(en) angemeldet. Diese wird jetzt abgemeldet, danach werden alle Session Hosts des Hostpools in Azure deallokiert.</p><p style='font-size:15px;color:#242424;line-height:1.5'>Sie k&ouml;nnen dieses Fenster schlie&szlig;en. Die Verbindung wird in wenigen Sekunden getrennt.</p><p style='font-size:13px;color:#616161'>Beim n&auml;chsten Verbindungsaufbau startet der Session Host automatisch wieder (Start VM on Connect).</p></div></body></html>"
+          }
+        },
+        "Logoff_Remaining_Sessions": {
+          "type": "If",
+          "runAfter": {
+            "Respond_Shutdown_Started": [
+              "Succeeded"
+            ]
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@parameters('logoffRemainingSessions')",
+                  true
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "For_Each_Active_Session": {
+              "type": "Foreach",
+              "runAfter": {},
+              "foreach": "@body('Filter_Active_Sessions')",
+              "actions": {
+                "Logoff_Session": {
+                  "type": "Http",
+                  "runAfter": {},
+                  "inputs": {
+                    "method": "DELETE",
+                    "uri": "@{concat('https://management.azure.com', item()?['id'], '?api-version=', parameters('avdApiVersion'), '&force=true')}",
+                    "authentication": {
+                      "type": "ManagedServiceIdentity",
+                      "audience": "https://management.azure.com/"
+                    }
+                  }
+                }
+              },
+              "runtimeConfiguration": {
+                "concurrency": {
+                  "repetitions": 1
+                }
+              }
+            }
+          }
+        },
+        "Wait_Before_Deallocate": {
+          "type": "Wait",
+          "runAfter": {
+            "Logoff_Remaining_Sessions": [
+              "Succeeded",
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          },
+          "inputs": {
+            "interval": {
+              "count": "@parameters('logoffWaitSeconds')",
+              "unit": "Second"
+            }
+          }
+        },
+        "Filter_Session_Hosts_With_Vm": {
+          "type": "Query",
+          "runAfter": {
+            "Wait_Before_Deallocate": [
+              "Succeeded"
+            ]
+          },
+          "inputs": {
+            "from": "@coalesce(body('Get_Session_Hosts')?['value'], json('[]'))",
+            "where": "@not(empty(coalesce(item()?['properties']?['resourceId'], '')))"
+          }
+        },
+        "For_Each_Session_Host": {
+          "type": "Foreach",
+          "runAfter": {
+            "Filter_Session_Hosts_With_Vm": [
+              "Succeeded"
+            ]
+          },
+          "foreach": "@body('Filter_Session_Hosts_With_Vm')",
+          "actions": {
+            "Deallocate_Session_Host": {
+              "type": "Http",
+              "runAfter": {},
+              "operationOptions": "DisableAsyncPattern",
+              "inputs": {
+                "method": "POST",
+                "uri": "@{concat('https://management.azure.com', item()?['properties']?['resourceId'], '/deallocate?api-version=', parameters('computeApiVersion'))}",
+                "authentication": {
+                  "type": "ManagedServiceIdentity",
+                  "audience": "https://management.azure.com/"
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "actions": {
+          "Respond_Shutdown_Aborted": {
+            "type": "Response",
+            "kind": "Http",
+            "runAfter": {},
+            "inputs": {
+              "statusCode": 200,
+              "headers": {
+                "Content-Type": "text/html; charset=utf-8"
+              },
+              "body": "<html><head><title>Herunterfahren abgebrochen</title></head><body style='font-family:Segoe UI,Arial,sans-serif;background:#f3f2f1;margin:0;padding:48px'><div style='max-width:640px;margin:0 auto;background:#fff;border-radius:8px;padding:32px'><h1 style='color:#a4262c;font-size:22px;margin:0 0 16px'>Herunterfahren abgebrochen</h1><p style='font-size:15px;color:#242424;line-height:1.5'>Es sind noch <strong>@{length(body('Filter_Active_Sessions'))}</strong> aktive Sitzungen angemeldet. Es wurde nichts abgeschaltet.</p><p style='font-size:15px;color:#242424;line-height:1.5'>Angemeldete Benutzer: <strong>@{join(body('Select_Active_Users'), ', ')}</strong></p><p style='font-size:13px;color:#616161'>Bitte erneut versuchen, wenn Sie die letzte angemeldete Person sind.</p></div></body></html>"
+            }
+          }
+        }
+      }
+    }
+  },
+  "outputs": {}
+}
